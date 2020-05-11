@@ -21,6 +21,7 @@ using UserCRUD.Models;
 using UserCRUD.Repositories;
 using Newtonsoft.Json;
 using Microsoft.OpenApi.Models;
+using System.Text.Json;
 
 namespace UserCRUD
 {

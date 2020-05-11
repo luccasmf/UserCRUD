@@ -15,7 +15,7 @@ using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace UserCRUD.Controllers
 {
-    [Authorize(Policy = "Bearer")]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
@@ -82,7 +82,6 @@ namespace UserCRUD.Controllers
             return await _accountManagement.CreateUser(applicationUser, user.Password);
         }
         
-        [Authorize]
         [HttpPost("ChangePassword")]
         public async Task<ObjectResult> UpdateUserPassword([FromBody]UpdatePasswordViewModel userToUpdate)
         {
