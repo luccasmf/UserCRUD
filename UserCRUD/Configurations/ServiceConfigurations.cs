@@ -65,7 +65,7 @@ namespace UserCRUD.Configurations
                 auth.AddPolicy("Bearer", new AuthorizationPolicyBuilder()
                     .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
                     .RequireAuthenticatedUser().Build());
-
+                auth.DefaultPolicy = auth.GetPolicy("Bearer");
                 
             });
 
