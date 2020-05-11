@@ -61,7 +61,7 @@ namespace UserCRUD.Controllers
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public async Task<bool> CreateUser([FromBody]RegisterUser user )
+        public async Task<bool> CreateUser([FromBody]RegisterUserViewModel user )
         {
             ApplicationUser applicationUser = new ApplicationUser
             {
@@ -72,5 +72,38 @@ namespace UserCRUD.Controllers
 
             return await _accountManagement.CreateUser(applicationUser, user.Password);
         }
+        
+        [Authorize]
+        [HttpPost("ChangePassword")]
+        public async Task<bool> UpdateUserPassword([FromBody]UpdatePasswordViewModel userToUpdate)
+        {
+            userToUpdate.UserName = User.Identity.Name;
+
+            return await _accountManagement.UpdatePwd(userToUpdate);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("GetUser")]
+        public async Task<User> GetUserByUserName([FromQuery]string userName)
+        {
+            return await _accountManagement.GetUserByName(userName);
+        }
+
+        [Authorize]
+        [HttpGet("TestToken")]
+        public string TestToken()
+        {
+            return User.Identity.Name;
+        }
+
+        [AllowAnonymous]
+        [HttpDelete("DeleteUser")]
+        public async Task<bool> DeleteUser([FromQuery]string userName)
+        {
+            return await _accountManagement.DeleteUser(userName);
+
+        }
+
+      
     }
 }

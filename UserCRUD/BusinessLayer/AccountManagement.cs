@@ -91,12 +91,12 @@ namespace UserCRUD.BusinessLayer
             
         }
 
-        public async Task<bool> UpdatePwd(string userName, string oldPassword, string newPassword)
+        public async Task<bool> UpdatePwd(UpdatePasswordViewModel userToUpdate)
         {
-            ApplicationUser user = await _userManager.FindByNameAsync(userName);
+            ApplicationUser user = await _userManager.FindByNameAsync(userToUpdate.UserName);
 
 
-            IdentityResult result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+            IdentityResult result = await _userManager.ChangePasswordAsync(user, userToUpdate.OldPassword, userToUpdate.NewPassword);
             return result.Succeeded;
         }
 

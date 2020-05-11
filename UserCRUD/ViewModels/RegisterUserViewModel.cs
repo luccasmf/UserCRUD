@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace UserCRUD.ViewModels
 {
-    public class RegisterUser
+    public class RegisterUserViewModel
     {
         public string UserName { get; set; }
         public string Email { get; set; }
