@@ -55,7 +55,7 @@ namespace UserCRUD
                 .AddJsonOptions(o =>
                 { 
                     o.JsonSerializerOptions.IgnoreNullValues = true; 
-                
+                    o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
         }
 
