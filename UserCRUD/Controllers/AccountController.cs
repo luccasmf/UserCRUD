@@ -10,20 +10,22 @@ using UserCRUD.BusinessLayer;
 using UserCRUD.Configurations;
 using UserCRUD.Models;
 using UserCRUD.ViewModels;
+using ObjectResult = UserCRUD.ViewModels.ObjectResult;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace UserCRUD.Controllers
 {
+    [Authorize(Policy = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly AccountManagement _accountManagement;
+        private readonly IAccountManagement _accountManagement;
         public AccountController(UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            AccountManagement accountManagement)
+            IAccountManagement accountManagement)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -32,15 +34,16 @@ namespace UserCRUD.Controllers
 
         [AllowAnonymous]
         [HttpPost("Login")]
-        public object Login([FromBody]User usuario)
+        public async Task<ObjectResult> Login([FromBody]LoginViewModel usuario)
         {
+            ObjectDataResult<JWTToken> result = new ObjectDataResult<JWTToken>();
             bool credenciaisValidas = false;
             if (usuario != null && !string.IsNullOrWhiteSpace(usuario.UserName))
             {
                 // Verifica a existência do usuário nas tabelas do
                 // ASP.NET Core Identity
-                var userIdentity = _userManager
-                    .FindByNameAsync(usuario.UserName).Result;
+                var userIdentity = await _userManager
+                    .FindByNameAsync(usuario.UserName);
                 if (userIdentity != null)
                 {
                     // Efetua o login com base no Id do usuário e sua senha
@@ -53,15 +56,21 @@ namespace UserCRUD.Controllers
 
             if (credenciaisValidas)
             {
-                return _accountManagement.GenerateToken(usuario);
+                result.Success = true;
+                result.Data = _accountManagement.GenerateToken(usuario.UserName);
+            }
+            else
+            {
+                result.Success = false;
+                result.Message = "invalid credentials";
             }
 
-            return null;
+            return result;
         }
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public async Task<bool> CreateUser([FromBody]RegisterUserViewModel user )
+        public async Task<ObjectResult> CreateUser([FromBody]RegisterUserViewModel user )
         {
             ApplicationUser applicationUser = new ApplicationUser
             {
@@ -75,11 +84,10 @@ namespace UserCRUD.Controllers
         
         [Authorize]
         [HttpPost("ChangePassword")]
-        public async Task<bool> UpdateUserPassword([FromBody]UpdatePasswordViewModel userToUpdate)
+        public async Task<ObjectResult> UpdateUserPassword([FromBody]UpdatePasswordViewModel userToUpdate)
         {
-            userToUpdate.UserName = User.Identity.Name;
 
-            return await _accountManagement.UpdatePwd(userToUpdate);
+            return await _accountManagement.UpdatePwd(User.Identity.Name, userToUpdate);
         }
 
         [AllowAnonymous]
@@ -89,7 +97,6 @@ namespace UserCRUD.Controllers
             return await _accountManagement.GetUserByName(userName);
         }
 
-        [Authorize]
         [HttpGet("TestToken")]
         public string TestToken()
         {
@@ -98,7 +105,7 @@ namespace UserCRUD.Controllers
 
         [AllowAnonymous]
         [HttpDelete("DeleteUser")]
-        public async Task<bool> DeleteUser([FromQuery]string userName)
+        public async Task<ObjectResult> DeleteUser([FromQuery]string userName)
         {
             return await _accountManagement.DeleteUser(userName);
 

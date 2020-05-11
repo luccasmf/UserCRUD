@@ -43,6 +43,9 @@ namespace UserCRUD.Configurations
                     // Valida a assinatura de um token recebido
                     paramsValidation.ValidateIssuerSigningKey = true;
 
+                    paramsValidation.ValidateAudience = true;
+                    paramsValidation.ValidateIssuer = true;
+
                     // Verifica se um token recebido ainda é válido
                     paramsValidation.ValidateLifetime = true;
 
@@ -50,6 +53,9 @@ namespace UserCRUD.Configurations
                     // caso haja problemas de sincronismo de horário entre diferentes
                     // computadores envolvidos no processo de comunicação)
                     paramsValidation.ClockSkew = TimeSpan.Zero;
+
+
+                    bearerOptions.SaveToken = true;
                 });
 
             // Ativa o uso do token como forma de autorizar o acesso
@@ -59,13 +65,25 @@ namespace UserCRUD.Configurations
                 auth.AddPolicy("Bearer", new AuthorizationPolicyBuilder()
                     .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
                     .RequireAuthenticatedUser().Build());
+
+                
             });
 
         }
 
         public static void AddIdentityServices(this IServiceCollection services)
         {
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>(x =>
+           {
+               x.Password = new PasswordOptions
+               {
+                   RequiredLength = 6,
+                   RequireLowercase = false,
+                   RequireNonAlphanumeric = false,
+                   RequireUppercase = false
+               };
+
+           })
                .AddEntityFrameworkStores<ApplicationDbContext>()
                .AddDefaultTokenProviders();
 

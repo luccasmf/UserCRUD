@@ -45,7 +45,7 @@ namespace UserCRUD
             services.AddSwagerServices(Configuration);
 
             services.AddTransient<IUserRepositoy, UserRepository>();
-            services.AddTransient<AccountManagement>();
+            services.AddTransient<IAccountManagement, AccountManagement>();
 
             services.AddControllers()
                 .AddJsonOptions(o =>

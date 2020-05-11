@@ -13,7 +13,16 @@ using UserCRUD.ViewModels;
 
 namespace UserCRUD.BusinessLayer
 {
-    public class AccountManagement
+    public interface IAccountManagement
+    {
+        Task<ObjectResult> CreateUser(ApplicationUser user, string password);
+        Task<ObjectResult> DeleteUser(string userName);
+        JWTToken GenerateToken(string usuario);
+        Task<User> GetUserByName(string userName);
+        Task<ObjectResult> UpdatePwd(string userName, UpdatePasswordViewModel userToUpdate);
+    }
+
+    public class AccountManagement : IAccountManagement
     {
         private readonly TokenConfigurations _tokenConfigurations;
         private readonly SigningConfigurations _signingConfigurations;
@@ -26,13 +35,12 @@ namespace UserCRUD.BusinessLayer
         }
 
 
-        public JWTToken GenerateToken(User usuario)
+        public JWTToken GenerateToken(string usuario)
         {
             ClaimsIdentity identity = new ClaimsIdentity(
-                    new GenericIdentity(usuario.UserName, "Login"),
+                    new GenericIdentity(usuario, "Login"),
                     new[] {
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
-                        new Claim(JwtRegisteredClaimNames.UniqueName, usuario.UserName)
                     }
                 );
 
@@ -63,10 +71,12 @@ namespace UserCRUD.BusinessLayer
         }
 
 
-        public async Task<bool> CreateUser(
+        public async Task<ObjectResult> CreateUser(
             ApplicationUser user,
             string password)
         {
+            ObjectDataResult<IdentityResult> result = new ObjectDataResult<IdentityResult>();
+
             try
             {
                 if (_userManager.FindByNameAsync(user.UserName).Result == null)
@@ -78,32 +88,57 @@ namespace UserCRUD.BusinessLayer
                     {
                         IdentityResult x = await _userManager.AddToRoleAsync(user, Roles.BASE_ROLE);
 
-                        
+                        result.Success = x.Succeeded;
+                        if (x.Succeeded)
+                        {
+                            result.Data = resultado;
+                        }
+                        else
+                        {
+                            result.Message = x.Errors.Select(x => x.Description).FirstOrDefault();
+                        }
+                    }
+                    else
+                    {
+                        result.Success = resultado.Succeeded;
+                        result.Message = resultado.Errors.Select(x => x.Description).FirstOrDefault();
                     }
                 }
 
-                return true;
+                result.Success = false;
+                result.Message = "user already exists";
             }
-            catch
+            catch (Exception e)
             {
-                return false;
+                result.Success = false;
+                result.Message = e.Message;
             }
-            
+
+            return result;
+
+
         }
 
-        public async Task<bool> UpdatePwd(UpdatePasswordViewModel userToUpdate)
+        public async Task<ObjectResult> UpdatePwd(string userName, UpdatePasswordViewModel userToUpdate)
         {
-            ApplicationUser user = await _userManager.FindByNameAsync(userToUpdate.UserName);
+
+            ObjectDataResult<IdentityResult> result = new ObjectDataResult<IdentityResult>();
+            ApplicationUser user = await _userManager.FindByNameAsync(userName);
 
 
-            IdentityResult result = await _userManager.ChangePasswordAsync(user, userToUpdate.OldPassword, userToUpdate.NewPassword);
-            return result.Succeeded;
+            IdentityResult idRes = await _userManager.ChangePasswordAsync(user, userToUpdate.OldPassword, userToUpdate.NewPassword);
+
+            result.Success = idRes.Succeeded;
+            result.Message = idRes.Errors.Select(x => x.Description).FirstOrDefault();
+            result.Data = idRes.Succeeded ? idRes : null;
+
+            return result;
         }
 
         public async Task<User> GetUserByName(string userName)
         {
             ApplicationUser user = await _userManager.FindByNameAsync(userName);
-            if(user == null)
+            if (user == null)
             {
                 return null;
             }
@@ -117,18 +152,27 @@ namespace UserCRUD.BusinessLayer
             return usr;
         }
 
-        public async Task<bool> DeleteUser(string userName)
+        public async Task<ObjectResult> DeleteUser(string userName)
         {
+            ObjectDataResult<IdentityResult> result = new ObjectDataResult<IdentityResult>();
+
             ApplicationUser user = await _userManager.FindByNameAsync(userName);
 
-            if(user == null)
+            if (user == null)
             {
-                return false;
+                result.Success = false;
+                result.Message = "user not found";
+
+                return result;
             }
 
             IdentityResult wasDeleted = await _userManager.DeleteAsync(user);
 
-            return wasDeleted.Succeeded;
+            result.Success = wasDeleted.Succeeded;
+            result.Message = wasDeleted.Errors.Select(x => x.Description).FirstOrDefault();
+            result.Data = wasDeleted.Succeeded ? wasDeleted : null;
+
+            return result;
         }
     }
 }
