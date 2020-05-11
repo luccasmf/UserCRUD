@@ -22,7 +22,7 @@ namespace UserCRUD.Configurations
             services.AddSingleton(signingConfigurations);
 
             var tokenConfigurations = new TokenConfigurations();
-            new ConfigureFromConfigurationOptions<TokenConfigurations>(
+           new ConfigureFromConfigurationOptions<TokenConfigurations>(
                 Configuration.GetSection("TokenConfigurations"))
                     .Configure(tokenConfigurations);
             services.AddSingleton(tokenConfigurations);
